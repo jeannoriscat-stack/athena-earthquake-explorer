@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthquake Activity Explorer</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fa;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      margin-top: 0;
+      color: #6b7280;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-weight: bold;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #status {
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    .earthquake {
+      background: white;
+      margin-bottom: 10px;
+      padding: 15px;
+      border-radius: 10px;
+      border-left: 5px solid #6b7280;
+    }
+
+    .magnitude {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .details {
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .source {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Earthquake Activity Explorer</h1>
+  <p class="subtitle">
+    Explore recent real earthquake activity from the USGS.
+  </p>
+
+  <div class="controls">
+
+    <label>
+      Minimum magnitude
+      <select id="magnitude">
+        <option value="1">1.0+</option>
+        <option value="2.5" selected>2.5+</option>
+        <option value="4">4.0+</option>
+        <option value="5">5.0+</option>
+      </select>
+    </label>
+
+    <label>
+      Time range
+      <select id="days">
+        <option value="1" selected>Past 24 hours</option>
+        <option value="7">Past 7 days</option>
+        <option value="30">Past 30 days</option>
+      </select>
+    </label>
+
+    <label>
+      Refresh data
+      <button id="refresh">Search Earthquakes</button>
+    </label>
+
+  </div>
+
+  <div id="status">Loading earthquake data...</div>
+
+  <div id="results"></div>
+
+  <div class="source">
+    Data source: USGS Earthquake Hazards Program
+  </div>
+
+</div>
+
+<script>
+
+const magnitudeSelect = document.getElementById("magnitude");
+const daysSelect = document.getElementById("days");
+const refreshButton = document.getElementById("refresh");
+const results = document.getElementById("results");
+const status = document.getElementById("status");
+
+
+function renderEarthquakes(data) {
+
+  const earthquakes = data?.earthquakes || [];
+
+  status.textContent =
+    `${earthquakes.length} earthquake(s) found`;
+
+  results.innerHTML = "";
+
+  if (earthquakes.length === 0) {
+    results.innerHTML =
+      "<p>No earthquakes found for these filters.</p>";
+    return;
+  }
+
+  earthquakes.forEach(eq => {
+
+    const card = document.createElement("div");
+    card.className = "earthquake";
+
+    const time =
+      eq.time
+        ? new Date(eq.time).toLocaleString()
+        : "Unknown";
+
+    card.innerHTML = `
+      <div class="magnitude">
+        Magnitude ${eq.magnitude ?? "N/A"}
+      </div>
+
+      <div class="details">
+        <strong>Place:</strong>
+        ${eq.place ?? "Unknown"}<br>
+
+        <strong>Depth:</strong>
+        ${eq.depth_km ?? "N/A"} km<br>
+
+        <strong>Time:</strong>
+        ${time}
+      </div>
+    `;
+
+    results.appendChild(card);
+
+  });
+
+}
+
+
+async function searchEarthquakes() {
+
+  status.textContent = "Retrieving real USGS data...";
+
+  try {
+
+    if (!window.openai?.callTool) {
+      status.textContent =
+        "Athena tool connection is not available.";
+      return;
+    }
+
+    const response =
+      await window.openai.callTool(
+        "get_earthquakes",
+        {
+          min_magnitude:
+            Number(magnitudeSelect.value),
+
+          days:
+            Number(daysSelect.value),
+
+          limit: 50
+        }
+      );
+
+    const data =
+      response?.structuredContent ||
+      response?.content?.[0]?.json ||
+      response;
+
+    renderEarthquakes(data);
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    status.textContent =
+      "Unable to retrieve earthquake data.";
+
+  }
+
+}
+
+
+refreshButton.addEventListener(
+  "click",
+  searchEarthquakes
+);
+
+
+/*
+Initial data supplied by Athena
+after the MCP tool executes.
+*/
+
+if (window.openai?.toolOutput) {
+  renderEarthquakes(
+    window.openai.toolOutput
+  );
+}
+
+</script>
+
+</body>
+</html>
