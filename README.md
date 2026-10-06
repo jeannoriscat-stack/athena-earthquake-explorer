@@ -27,7 +27,71 @@ Athena AI Agent → MCP Server (Python) → USGS Earthquake API → Interactive 
 
 ## Run Locally
 
-Install the dependencies:
+### 1. Clone the repository
+
+```powershell
+git clone https://github.com/jeannoriscat-stack/athena-earthquake-explorer.git
+cd athena-earthquake-explorer
+```
+
+### 2. Install the dependencies
 
 ```powershell
 py -m pip install "mcp[cli]" httpx
+```
+
+### 3. Start the MCP server
+
+```powershell
+py server.py
+```
+
+The MCP server runs locally on:
+
+```text
+http://127.0.0.1:8000
+```
+
+Keep this terminal running.
+
+### 4. Create a Cloudflare Quick Tunnel
+
+Open a second terminal and run:
+
+```powershell
+cloudflared tunnel --url http://127.0.0.1:8000
+```
+
+Cloudflare will generate a temporary public URL similar to:
+
+```text
+https://your-random-url.trycloudflare.com
+```
+
+Keep this terminal running.
+
+### 5. Connect Athena AI
+
+From the main Athena AI Agent page:
+
+1. Click **Edit Agent**
+2. Open **Capabilities**
+3. Locate the **MCP** configuration
+4. Enter the Cloudflare URL followed by `/mcp` in **MCP Server URL**
+5. Set **MCP Authorization** to **No Auth**
+
+Example:
+
+```text
+https://your-random-url.trycloudflare.com/mcp
+```
+
+Update the agent configuration.
+
+### 6. Test the application
+
+Once connected, the Athena AI agent can call the MCP server, retrieve live earthquake data from the USGS Earthquake Hazards Program API, and render the interactive Earthquake Activity Explorer widget.
+
+Use the widget controls to change the minimum magnitude and time range, then retrieve the earthquake data.
+
+> **Note:** Cloudflare Quick Tunnel URLs are temporary. A new URL may be generated when the tunnel is restarted.
