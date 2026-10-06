@@ -25,6 +25,12 @@ Athena AI Agent → MCP Server (Python) → USGS Earthquake API → Interactive 
 - httpx
 - Git / GitHub
 
+## Demo
+
+A short demonstration video shows the Earthquake Activity Explorer running in Athena AI, retrieving live USGS earthquake data and updating the widget using different magnitude and time-range filters.
+
+[View the demonstration video](./earthquake-activity-explorer-demo.mp4)
+
 ## Run Locally
 
 ### 1. Clone the repository
